@@ -1,63 +1,9 @@
-data "aws_iam_policy_document" "ecs_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-  }
+data "aws_cloudwatch_log_group" "this" {
+  name = var.log_group_name
 }
 
-resource "aws_ecs_cluster" "this" {
-  name = var.cluster_name
-
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
-
-  tags = {
-    Name        = var.cluster_name
-    Environment = var.environment
-    ManagedBy   = "terragrunt"
-  }
-}
-
-resource "aws_cloudwatch_log_group" "this" {
-  name              = "/ecs/${var.name_prefix}/${var.environment}/${var.service_name}"
-  retention_in_days = 30
-
-  tags = {
-    Name        = var.service_name
-    Environment = var.environment
-    ManagedBy   = "terragrunt"
-  }
-}
-
-resource "aws_iam_role" "execution" {
-  name               = "${var.name_prefix}-${var.environment}-${var.service_name}-ecs-exec"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
-
-  tags = {
-    Name        = "${var.name_prefix}-${var.environment}-${var.service_name}-ecs-exec"
-    Environment = var.environment
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "execution" {
-  role       = aws_iam_role.execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-resource "aws_iam_role" "task" {
-  name               = "${var.name_prefix}-${var.environment}-${var.service_name}-ecs-task"
-  assume_role_policy = data.aws_iam_policy_document.ecs_assume_role.json
-
-  tags = {
-    Name        = "${var.name_prefix}-${var.environment}-${var.service_name}-ecs-task"
-    Environment = var.environment
-  }
+locals {
+  resolved_container_image = var.container_image != "" ? var.container_image : "${var.container_registry}/${var.container_repository}:${var.container_version}"
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -66,13 +12,13 @@ resource "aws_ecs_task_definition" "this" {
   network_mode             = "awsvpc"
   cpu                      = tostring(var.cpu)
   memory                   = tostring(var.memory)
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
+  execution_role_arn       = var.execution_role_arn
+  task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
     {
       name      = var.service_name
-      image     = var.container_image
+      image     = local.resolved_container_image
       essential = true
       cpu       = var.cpu
       memory    = var.memory
@@ -88,7 +34,7 @@ resource "aws_ecs_task_definition" "this" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.this.name
+          awslogs-group         = data.aws_cloudwatch_log_group.this.name
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = var.service_name
         }
@@ -103,18 +49,16 @@ resource "aws_ecs_task_definition" "this" {
     Name        = "${var.name_prefix}-${var.environment}-${var.service_name}"
     Environment = var.environment
     ManagedBy   = "terragrunt"
+    ClusterName = var.cluster_name
   }
 }
 
 resource "aws_ecs_service" "this" {
-  name                              = "${var.name_prefix}-${var.environment}-${var.service_name}"
-  cluster                           = aws_ecs_cluster.this.id
-  task_definition                   = aws_ecs_task_definition.this.arn
-  desired_count                     = var.desired_count
-  launch_type                       = "FARGATE"
-  health_check_grace_period_seconds = var.health_check_grace_period_seconds
-  deployment_minimum_healthy_percent = 50
-  deployment_maximum_percent         = 200
+  name            = "${var.name_prefix}-${var.environment}-${var.service_name}"
+  cluster         = var.cluster_name
+  task_definition = aws_ecs_task_definition.this.arn
+  desired_count   = var.desired_count
+  launch_type     = "FARGATE"
 
   network_configuration {
     subnets          = var.subnet_ids

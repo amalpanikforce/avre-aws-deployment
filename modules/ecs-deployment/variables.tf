@@ -1,5 +1,5 @@
 variable "aws_region" {
-  description = "AWS region for CloudWatch log group." 
+  description = "AWS region for CloudWatch log group."
   type        = string
   default     = "us-east-1"
 }
@@ -17,20 +17,53 @@ variable "environment" {
 }
 
 variable "cluster_name" {
-  description = "Name of the ECS cluster."
+  description = "Name of the ECS cluster created by the AWS infrastructure repo."
   type        = string
-  default     = "avre-sandbox-cluster"
+  default     = "avre-ecs-cluster"
 }
 
 variable "service_name" {
-  description = "Name of the ECS service and task family."
+  description = "Name of the ECS task family and app service."
   type        = string
   default     = "avre-api"
 }
 
-variable "container_image" {
-  description = "Container image to deploy."
+variable "execution_role_arn" {
+  description = "ARN of the existing ECS task execution role from the AWS infra repo."
   type        = string
+}
+
+variable "task_role_arn" {
+  description = "ARN of the existing ECS task role from the AWS infra repo."
+  type        = string
+}
+
+variable "log_group_name" {
+  description = "Existing CloudWatch log group name created by the AWS infra repo."
+  type        = string
+  default     = "/ecs/avre-app"
+}
+
+variable "container_registry" {
+  description = "ECR registry/account ID or registry hostname."
+  type        = string
+}
+
+variable "container_repository" {
+  description = "ECR repository name."
+  type        = string
+}
+
+variable "container_version" {
+  description = "Container image tag version to deploy."
+  type        = string
+  default     = "latest"
+}
+
+variable "container_image" {
+  description = "Full container image to deploy. Derived from registry/repository/version when not provided."
+  type        = string
+  default     = ""
 }
 
 variable "container_port" {
@@ -40,9 +73,33 @@ variable "container_port" {
 }
 
 variable "desired_count" {
-  description = "Desired number of running tasks."
+  description = "Desired number of ECS tasks to run."
   type        = number
   default     = 1
+}
+
+variable "subnet_ids" {
+  description = "Subnet IDs from the AWS infra repo for the ECS service network configuration."
+  type        = list(string)
+  default     = []
+}
+
+variable "security_group_ids" {
+  description = "Security group IDs from the AWS infra repo for the ECS service."
+  type        = list(string)
+  default     = []
+}
+
+variable "assign_public_ip" {
+  description = "Whether to assign a public IP to the ECS task."
+  type        = bool
+  default     = false
+}
+
+variable "target_group_arn" {
+  description = "Optional ALB target group ARN to attach this service to."
+  type        = string
+  default     = ""
 }
 
 variable "cpu" {
@@ -55,34 +112,6 @@ variable "memory" {
   description = "Memory (MB) for the task definition."
   type        = number
   default     = 1024
-}
-
-variable "subnet_ids" {
-  description = "Subnet IDs for the ECS service networking." 
-  type        = list(string)
-}
-
-variable "security_group_ids" {
-  description = "Security group IDs for ECS tasks."
-  type        = list(string)
-}
-
-variable "assign_public_ip" {
-  description = "Whether to assign a public IP to the task."
-  type        = bool
-  default     = false
-}
-
-variable "health_check_grace_period_seconds" {
-  description = "Grace period before ECS service health checks begin."
-  type        = number
-  default     = 60
-}
-
-variable "target_group_arn" {
-  description = "Optional ALB target group ARN to attach the service to."
-  type        = string
-  default     = ""
 }
 
 variable "container_environment" {
