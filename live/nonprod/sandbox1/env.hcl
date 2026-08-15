@@ -35,7 +35,7 @@ locals {
 
   container_repository = "avre-shared-ecr"
 
-  container_version = "4ec2108ecbd851ecd11d41aab222fb41417e4eb0"
+  container_version = "aa615867dc1abeb7c6bb12cb457dd20a132286d9"
 
   container_port = 8000
 
