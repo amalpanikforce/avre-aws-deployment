@@ -89,3 +89,9 @@ variable "container_command" {
   type        = list(string)
   default     = ["sh", "-c", "alembic upgrade head && exec python -m uvicorn avre_api:app --host 0.0.0.0 --port 8000"]
 }
+
+variable "deployment_controller_type" {
+  description = "Deployment controller type: CODE_DEPLOY or ECS"
+  type        = string
+  default     = "CODE_DEPLOY"
+}
