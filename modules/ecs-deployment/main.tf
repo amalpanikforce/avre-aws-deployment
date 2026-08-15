@@ -44,6 +44,7 @@ resource "aws_ecs_task_definition" "this" {
         }
       }
 
+      command     = var.container_command
       environment = var.container_environment
       secrets     = var.container_secrets
     }

@@ -83,3 +83,9 @@ variable "container_secrets" {
     valueFrom = string
   }))
 }
+
+variable "container_command" {
+  description = "Optional override for container command (e.g. running Alembic DB migrations before starting app)"
+  type        = list(string)
+  default     = ["sh", "-c", "alembic upgrade head && exec python -m uvicorn avre_api:app --host 0.0.0.0 --port 8000"]
+}
