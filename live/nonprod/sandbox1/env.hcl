@@ -35,7 +35,7 @@ locals {
 
   container_repository = "avre-shared-ecr"
 
-  container_version = "9b08caf525856872d54f73e6492ba9407366dcde"
+  container_version = "60178595fc9af2d6a6f6f1e92e3c4a54ac97f08e"
 
   container_port = 8000
 
@@ -54,6 +54,42 @@ locals {
     {
       name  = "PORT"
       value = "8000"
+    },
+    {
+      name  = "AVRE_RUNTIME_MODE"
+      value = "local"
+    },
+    {
+      name  = "AVRE_ENVIRONMENT_NAME"
+      value = "aws-sandbox"
+    },
+    {
+      name  = "AVRE_DEPLOYMENT_KEY"
+      value = "acme_qsr"
+    },
+    {
+      name  = "AVRE_DB_PROVIDER"
+      value = "postgres"
+    },
+    {
+      name  = "AVRE_DB_URL"
+      value = "postgresql://avre_user:YourSecurePassword@rds-cluster.us-east-1.rds.amazonaws.com:5432/avre"
+    },
+    {
+      name  = "AVRE_STORAGE_PROVIDER"
+      value = "local"
+    },
+    {
+      name  = "AVRE_AUTH_MODE"
+      value = "none"
+    },
+    {
+      name  = "AVRE_LOG_LEVEL"
+      value = "INFO"
+    },
+    {
+      name  = "AVRE_APP_VERSION"
+      value = "1.2.0"
     }
   ]
 
