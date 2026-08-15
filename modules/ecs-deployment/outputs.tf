@@ -19,8 +19,8 @@ output "task_definition_family" {
 }
 
 output "log_group_name" {
-  description = "Existing log group used by the task definition."
-  value       = data.aws_cloudwatch_log_group.this.name
+  description = "CloudWatch log group used by ECS"
+  value       = var.log_group_name
 }
 
 output "execution_role_arn" {

@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-STACK        ?= sandbox
+STACK        ?= sandbox1
 AUTO_APPROVE ?= false
 CONFIRM      ?=
 
@@ -8,7 +8,7 @@ TG  ?= terragrunt
 TF  ?= terraform
 AWS ?= aws
 
-STACK_PATH_sandbox := live/nonprod/sandbox
+STACK_PATH_sandbox1 := live/nonprod/sandbox1
 
 STACK_DIR := $(STACK_PATH_$(STACK))
 
@@ -62,5 +62,5 @@ endif
 .PHONY: check-stack
 check-stack:
 ifndef STACK_DIR
-	$(error Invalid STACK="$(STACK)". Supported values: sandbox)
+	$(error Invalid STACK="$(STACK)". Supported values: sandbox1)
 endif
