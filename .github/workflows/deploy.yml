@@ -16,9 +16,7 @@ on:
         required: true
         type: string
 
-# Permissions required for OIDC with AWS
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -41,13 +39,12 @@ jobs:
         with:
           terragrunt_version: latest
 
-      # Note: The OIDC Role ARN should ideally be a GitHub Secret or Variable
-      # Here we assume a single role for deployment, but it could be per-environment.
-      - name: Configure AWS Credentials via OIDC
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_OIDC_DEPLOY_ROLE_ARN }}
-          aws-region: ap-south-1 # You might want this to be dynamic based on the client
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
 
       - name: Run Deployment Script
         env:
