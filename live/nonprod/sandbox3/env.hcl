@@ -23,19 +23,19 @@ locals {
   log_group_name = "/ecs/avre-sandbox3-app"
 
   subnet_ids = [
-    "subnet-045174f27b27e9440",
-    "subnet-0645788b14974b7de"
+    "subnet-0601980bf5ddfac24",
+    "subnet-0fce8262bd35f61b4"
   ]
 
   security_group_ids = [
-    "sg-03874f162b97d4069"
+    "sg-02fc95b3ab8b6919a"
   ]
 
-  target_group_arn = "arn:aws:elasticloadbalancing:ap-south-1:526550911351:targetgroup/avre-sandbox3-tg/cb91a96ef03624c8"
+  target_group_arn = "arn:aws:elasticloadbalancing:ap-south-1:526550911351:targetgroup/avre-sandbox3-tg/d2eb7a0ea91546c9"
 
-  container_repository = "avre-shared-ecr"
+  container_image = "ghcr.io/kcs-platform-engineering/avre@sha256:8e99e562917b08184bf0fbcf16b46041a0a47cd2cacbf532b3e65570b5ef1dbb"
 
-  container_version = "aa615867dc1abeb7c6bb12cb457dd20a132286d9"
+  repository_credentials_arn = "arn:aws:secretsmanager:ap-south-1:526550911351:secret:avre-sandbox3-ghcr-credentials-CVha23"
 
   container_port = 8000
 
@@ -100,7 +100,7 @@ locals {
   container_secrets = [
     {
       name      = "DATABASE_CREDENTIALS"
-      valueFrom = "arn:aws:secretsmanager:ap-south-1:526550911351:secret:avre-sandbox3-db-credentials-YYpHq5"
+      valueFrom = "arn:aws:secretsmanager:ap-south-1:526550911351:secret:avre-sandbox3-db-credentials-6sM6cb"
     }
   ]
 }

@@ -30,12 +30,15 @@ variable "log_group_name" {
   type = string
 }
 
-variable "container_repository" {
-  type = string
+variable "container_image" {
+  description = "Full OCI container image reference (e.g. ghcr.io/kcs-platform-engineering/avre:v2.3.0 or docker.io/owner/repo:tag)"
+  type        = string
 }
 
-variable "container_version" {
-  type = string
+variable "repository_credentials_arn" {
+  description = "Optional AWS Secrets Manager ARN containing username and PAT for pulling private container images"
+  type        = string
+  default     = ""
 }
 
 variable "container_port" {

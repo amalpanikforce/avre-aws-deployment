@@ -1,13 +1,5 @@
-data "aws_caller_identity" "current" {}
-
 data "aws_cloudwatch_log_group" "this" {
   name = var.log_group_name
-}
-
-locals {
-  container_registry = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com"
-
-  container_image = "${local.container_registry}/${var.container_repository}:${var.container_version}"
 }
 
 resource "aws_ecs_task_definition" "this" {
@@ -20,34 +12,41 @@ resource "aws_ecs_task_definition" "this" {
   task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
-    {
-      name      = var.service_name
-      image     = local.container_image
-      essential = true
-      cpu       = var.cpu
-      memory    = var.memory
+    merge(
+      {
+        name      = var.service_name
+        image     = var.container_image
+        essential = true
+        cpu       = var.cpu
+        memory    = var.memory
 
-      portMappings = [
-        {
-          containerPort = var.container_port
-          hostPort      = var.container_port
-          protocol      = "tcp"
+        portMappings = [
+          {
+            containerPort = var.container_port
+            hostPort      = var.container_port
+            protocol      = "tcp"
+          }
+        ]
+
+        logConfiguration = {
+          logDriver = "awslogs"
+          options = {
+            awslogs-group         = var.log_group_name
+            awslogs-region        = var.aws_region
+            awslogs-stream-prefix = var.service_name
+          }
         }
-      ]
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          awslogs-group         = var.log_group_name
-          awslogs-region        = var.aws_region
-          awslogs-stream-prefix = var.service_name
+        command     = var.container_command
+        environment = var.container_environment
+        secrets     = var.container_secrets
+      },
+      var.repository_credentials_arn != "" ? {
+        repositoryCredentials = {
+          credentialsParameter = var.repository_credentials_arn
         }
-      }
-
-      command     = var.container_command
-      environment = var.container_environment
-      secrets     = var.container_secrets
-    }
+      } : {}
+    )
   ])
 
   tags = {
