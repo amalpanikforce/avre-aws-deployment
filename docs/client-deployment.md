@@ -58,6 +58,25 @@ If any required field is missing from the JSON file, `deploy.sh` aborts with:
 
 ---
 
+## 4. GitHub Actions (CI/CD)
+
+The deployment process is fully automated via GitHub Actions (`.github/workflows/deploy.yml`). This provides a controlled, auditable, and secure deployment mechanism.
+
+### Key CI/CD Features:
+- **`workflow_dispatch`**: Deployments are triggered manually from the GitHub UI, requiring the user to select the **Client/Environment** from a dropdown and input the **Version**.
+- **GitHub Environments**: Each client (e.g., `sandbox`, `kforce`) is set up as a GitHub Environment. You can configure **required reviewers** in the repository settings to enforce approval gates before a deployment to a specific client proceeds.
+- **OIDC Authentication**: GitHub Actions securely authenticates with AWS using OpenID Connect (OIDC). No long-lived AWS IAM access keys are stored in GitHub.
+- **Non-Interactive Execution**: Setting the `CI=true` environment variable automatically bypasses the interactive `[y/N]` approval prompt in `deploy.sh`.
+
+### How to Deploy via UI:
+1. Go to the **Actions** tab in GitHub.
+2. Select the **Client Deployment** workflow.
+3. Click **Run workflow**.
+4. Select the target client (e.g., `kforce`) and enter the version (e.g., `1.0.3`).
+5. Click **Run workflow** and approve the deployment if prompted by Environment protection rules.
+
+---
+
 ## 4. Idempotency Guarantees
 
 1. **Secret Creation**:

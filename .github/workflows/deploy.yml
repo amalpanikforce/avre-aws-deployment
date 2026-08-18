@@ -1,0 +1,59 @@
+name: Client Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      client:
+        description: 'Client/Environment to deploy (e.g., sandbox, sandbox3)'
+        required: true
+        type: choice
+        options:
+          - sandbox
+          - sandbox3
+          - kforce
+      version:
+        description: 'Version to deploy (e.g., 1.0.3)'
+        required: true
+        type: string
+
+# Permissions required for OIDC with AWS
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.client }}
+    runs-on: ubuntu-latest
+    
+    # Use GitHub Environments to enforce approval gates
+    environment: ${{ github.event.inputs.client }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup OpenTofu (Terragrunt dependency)
+        uses: opentofu/setup-opentofu@v1
+
+      - name: Setup Terragrunt
+        uses: autero1/action-terragrunt@v1.1.0
+        with:
+          terragrunt_version: latest
+
+      # Note: The OIDC Role ARN should ideally be a GitHub Secret or Variable
+      # Here we assume a single role for deployment, but it could be per-environment.
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_OIDC_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1 # You might want this to be dynamic based on the client
+
+      - name: Run Deployment Script
+        env:
+          CI: true # Bypasses the interactive prompt in deploy.sh
+          # The GitHub token is passed to deploy.sh for GHCR auth if needed
+          # But the script currently pulls from AWS Secrets Manager
+        run: |
+          chmod +x ./scripts/deploy.sh
+          ./scripts/deploy.sh ${{ github.event.inputs.client }} ${{ github.event.inputs.version }}

@@ -400,12 +400,16 @@ echo "=========================================="
 echo " Deployment Approval"
 echo "=========================================="
 echo
-read -r -p "Deploy version $VERSION ($IMMUTABLE_IMAGE) to environment '$ENV_NAME'? [y/N]: " APPROVE
+if [[ "${CI:-false}" == "true" ]]; then
+    echo "Running in CI mode (CI=true). Bypassing interactive approval."
+else
+    read -r -p "Deploy version $VERSION ($IMMUTABLE_IMAGE) to environment '$ENV_NAME'? [y/N]: " APPROVE
 
-if [[ ! "$APPROVE" =~ ^[Yy]$ ]]; then
-    echo
-    echo "Deployment cancelled by user."
-    exit 0
+    if [[ ! "$APPROVE" =~ ^[Yy]$ ]]; then
+        echo
+        echo "Deployment cancelled by user."
+        exit 0
+    fi
 fi
 
 # ============================================================
