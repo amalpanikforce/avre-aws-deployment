@@ -33,9 +33,9 @@ locals {
 
   target_group_arn = "arn:aws:elasticloadbalancing:ap-south-1:526550911351:targetgroup/avre-sandbox3-tg/d2eb7a0ea91546c9"
 
-  container_image = "ghcr.io/kcs-platform-engineering/avre@sha256:8e99e562917b08184bf0fbcf16b46041a0a47cd2cacbf532b3e65570b5ef1dbb"
+  container_image = "ghcr.io/kcs-platform-engineering/avre@sha256:66c1dc3fde51c0aa7208548c844e2759a6217bfbaeb41386d15d4058c7b8ca07"
 
-  repository_credentials_arn = "arn:aws:secretsmanager:ap-south-1:526550911351:secret:avre-sandbox3-ghcr-credentials-CVha23"
+  repository_credentials_arn = "arn:aws:secretsmanager:ap-south-1:526550911351:secret:avre-sandbox3-ghcr-credentials-7D6Khr"
 
   container_port = 8000
 

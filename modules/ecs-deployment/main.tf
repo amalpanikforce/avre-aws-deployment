@@ -30,6 +30,7 @@ resource "aws_ecs_task_definition" "this" {
 
         logConfiguration = {
           logDriver = "awslogs"
+
           options = {
             awslogs-group         = var.log_group_name
             awslogs-region        = var.aws_region
@@ -41,6 +42,7 @@ resource "aws_ecs_task_definition" "this" {
         environment = var.container_environment
         secrets     = var.container_secrets
       },
+
       var.repository_credentials_arn != "" ? {
         repositoryCredentials = {
           credentialsParameter = var.repository_credentials_arn
@@ -72,6 +74,7 @@ resource "aws_ecs_service" "this" {
 
   dynamic "load_balancer" {
     for_each = var.target_group_arn == "" ? [] : [var.target_group_arn]
+
     content {
       target_group_arn = load_balancer.value
       container_name   = var.service_name
@@ -85,7 +88,6 @@ resource "aws_ecs_service" "this" {
 
   tags = {
     Name        = "${var.name_prefix}-${var.environment}-${var.service_name}"
-    Environment = var.environment
     ManagedBy   = "terragrunt"
   }
 }
