@@ -15,17 +15,24 @@ This repository is the deployment-only counterpart to the AVRE AWS infrastructur
 avre-aws-deployment/
 ├── Makefile
 ├── README.md
+├── config/
+│   └── sandbox.json          # Deploy script config per client (one per client)
+├── docs/
+│   └── client-deployment.md
 ├── live/
 │   ├── root.hcl
 │   └── nonprod/
-│       └── sandbox/
+│       └── sandbox/          # One folder per client (replace with client name)
 │           ├── env.hcl
 │           └── terragrunt.hcl
-└── modules/
-    └── ecs-deployment/
-        ├── main.tf
-        ├── variables.tf
-        └── outputs.tf
+├── modules/
+│   └── ecs-deployment/
+│       ├── main.tf
+│       ├── variables.tf
+│       └── outputs.tf
+└── scripts/
+    ├── deploy.sh
+    └── setup-ghcr-secret.sh
 ```
 
 ## Typical usage

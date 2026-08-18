@@ -16,39 +16,39 @@ This document outlines the deployment workflow for AVRE application services usi
 ## 2. Environment Configuration System (`config/*.json`)
 
 ### Required Config JSON Schema
-Every environment configuration (e.g., `config/sandbox3.json`) **MUST** include all 7 required fields:
+Every client configuration (e.g., `config/sandbox.json`) **MUST** include all 7 required fields:
 
 ```json
 {
   "aws_region": "ap-south-1",
-  "secret_name": "avre-sandbox3-ghcr-credentials",
+  "secret_name": "avre-sandbox-ghcr-credentials",
   "ghcr_image": "ghcr.io/kcs-platform-engineering/avre",
-  "cluster_name": "avre-sandbox3-ecs-cluster",
-  "service_name": "avre-sandbox3-ecs",
-  "tg_dir": "live/nonprod/sandbox3",
+  "cluster_name": "avre-sandbox-ecs-cluster",
+  "service_name": "avre-sandbox-app",
+  "tg_dir": "live/nonprod/sandbox",
   "version": "1.0.2"
 }
 ```
 
 If any field is missing from the JSON file, `deploy.sh` aborts with:
-`ERROR: Missing required input(s) in 'config/sandbox3.json': [field]. All inputs must be present in JSON file. Otherwise NO GO.`
+`ERROR: Missing required input(s) in 'config/sandbox.json': [field]. All inputs must be present in JSON file. Otherwise NO GO.`
 
 ---
 
 ## 3. Execution Syntax & Defaults
 
 ```bash
-# 1. Zero Arguments (Defaults to sandbox3 using config/sandbox3.json inputs):
+# 1. Zero Arguments (Defaults to sandbox using config/sandbox.json inputs):
 ./scripts/deploy.sh
 
-# 2. Override version for sandbox3:
+# 2. Override version for sandbox:
 ./scripts/deploy.sh 1.0.3
 
-# 3. Target specific environment (uses config/<env>.json inputs):
-./scripts/deploy.sh sandbox4
+# 3. Target specific client (uses config/<client>.json inputs):
+./scripts/deploy.sh kforce
 
-# 4. Target specific environment with version override:
-./scripts/deploy.sh sandbox4 1.0.3
+# 4. Target specific client with version override:
+./scripts/deploy.sh kforce 1.0.3
 ```
 
 ---

@@ -5,10 +5,10 @@ set -euo pipefail
 # AVRE Client Deployment Script (Idempotent & Self-Healing)
 #
 # Usage:
-#   ./scripts/deploy.sh                         (defaults to sandbox3 using config/sandbox3.json)
-#   ./scripts/deploy.sh 1.0.2                   (defaults to sandbox3 with version override)
-#   ./scripts/deploy.sh sandbox3                (specified environment using config/sandbox3.json)
-#   ./scripts/deploy.sh sandbox3 1.0.2          (specified environment with version override)
+#   ./scripts/deploy.sh                         (defaults to sandbox using config/sandbox.json)
+#   ./scripts/deploy.sh 1.0.2                   (defaults to sandbox with version override)
+#   ./scripts/deploy.sh sandbox                (specified environment using config/sandbox.json)
+#   ./scripts/deploy.sh sandbox 1.0.2          (specified environment with version override)
 #   ./scripts/deploy.sh sandbox4 1.0.2          (future environment config/sandbox4.json)
 #
 # Strict Rules:
@@ -56,14 +56,14 @@ get_json_field() {
 # ============================================================
 # 1. Argument Parsing & Strict JSON Config Validation
 # ============================================================
-ENV_NAME="sandbox3"
+ENV_NAME="sandbox"
 CLI_VERSION=""
 
 if [[ $# -eq 0 ]]; then
-    ENV_NAME="sandbox3"
+    ENV_NAME="sandbox"
 elif [[ $# -eq 1 ]]; then
     if [[ "$1" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-        ENV_NAME="sandbox3"
+        ENV_NAME="sandbox"
         CLI_VERSION="$1"
     else
         ENV_NAME="$1"
@@ -73,8 +73,8 @@ elif [[ $# -eq 2 ]]; then
     CLI_VERSION="$2"
 else
     echo "Usage:"
-    echo "  ./scripts/deploy.sh                         (defaults to sandbox3 using config/sandbox3.json)"
-    echo "  ./scripts/deploy.sh <version>              (defaults to sandbox3 with specified version)"
+    echo "  ./scripts/deploy.sh                         (defaults to sandbox using config/sandbox.json)"
+    echo "  ./scripts/deploy.sh <version>              (defaults to sandbox with specified version)"
     echo "  ./scripts/deploy.sh <environment>          (specified environment using config/<env>.json)"
     echo "  ./scripts/deploy.sh <environment> <version> (specified environment & version)"
     echo

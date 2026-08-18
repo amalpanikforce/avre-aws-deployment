@@ -17,7 +17,7 @@ set -euo pipefail
 #
 # Optional:
 #   AWS_REGION=ap-south-1 \
-#   SECRET_NAME=avre-sandbox3-ghcr-credentials \
+#   SECRET_NAME=avre-sandbox-ghcr-credentials \
 #   GHCR_IMAGE=ghcr.io/kcs-platform-engineering/avre \
 #   ./scripts/setup-ghcr-secret.sh
 # ============================================================
@@ -25,7 +25,7 @@ set -euo pipefail
 set -o pipefail
 
 readonly AWS_REGION="${AWS_REGION:-ap-south-1}"
-readonly SECRET_NAME="${SECRET_NAME:-avre-sandbox3-ghcr-credentials}"
+readonly SECRET_NAME="${SECRET_NAME:-avre-sandbox-ghcr-credentials}"
 readonly GHCR_IMAGE="${GHCR_IMAGE:-ghcr.io/kcs-platform-engineering/avre}"
 
 # Temporary corporate SSL workaround
