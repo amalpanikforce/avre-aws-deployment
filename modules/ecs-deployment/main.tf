@@ -39,7 +39,9 @@ resource "aws_ecs_task_definition" "this" {
         }
 
         command     = var.container_command
-        environment = var.container_environment
+        environment = concat(var.container_environment, [
+          { name = "AVRE_APP_VERSION", value = var.app_version }
+        ])
         secrets     = var.container_secrets
       },
 

@@ -16,21 +16,26 @@ This document outlines the deployment workflow for AVRE application services usi
 ## 2. Environment Configuration System (`config/*.json`)
 
 ### Required Config JSON Schema
-Every client configuration (e.g., `config/sandbox.json`) **MUST** include all 7 required fields:
+Every client configuration (e.g., `config/sandbox.json`) contains **only 3 deploy-time fields**:
 
 ```json
 {
   "aws_region": "ap-south-1",
-  "secret_name": "avre-sandbox-ghcr-credentials",
   "ghcr_image": "ghcr.io/kcs-platform-engineering/avre",
-  "cluster_name": "avre-sandbox-ecs-cluster",
-  "service_name": "avre-sandbox-app",
-  "tg_dir": "live/nonprod/sandbox",
   "version": "1.0.2"
 }
 ```
 
-If any field is missing from the JSON file, `deploy.sh` aborts with:
+**Why only 3 fields?** The remaining values are derived automatically — no duplication, no drift:
+
+| Value | Source |
+|---|---|
+| `tg_dir` | Derived: `live/nonprod/<env>` (repo structure) |
+| `secret_name` | Derived: `avre-<env>-ghcr-credentials` (naming convention) |
+| `cluster_name` | Read from `terragrunt output` after apply |
+| `service_name` | Read from `terragrunt output` after apply |
+
+If any required field is missing from the JSON file, `deploy.sh` aborts with:
 `ERROR: Missing required input(s) in 'config/sandbox.json': [field]. All inputs must be present in JSON file. Otherwise NO GO.`
 
 ---

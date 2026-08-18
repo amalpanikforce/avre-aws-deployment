@@ -43,7 +43,6 @@ inputs = {
   security_group_ids    = include.env.locals.security_group_ids
   target_group_arn      = include.env.locals.target_group_arn
 
-  container_image             = include.env.locals.container_image
   repository_credentials_arn  = try(include.env.locals.repository_credentials_arn, "")
   container_port        = include.env.locals.container_port
 

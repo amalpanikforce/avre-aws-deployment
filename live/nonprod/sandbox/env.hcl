@@ -33,8 +33,6 @@ locals {
 
   target_group_arn = "arn:aws:elasticloadbalancing:ap-south-1:526550911351:targetgroup/avre-sandbox-tg/d2eb7a0ea91546c9"
 
-  container_image = "ghcr.io/kcs-platform-engineering/avre@sha256:66c1dc3fde51c0aa7208548c844e2759a6217bfbaeb41386d15d4058c7b8ca07"
-
   repository_credentials_arn = "arn:aws:secretsmanager:ap-south-1:526550911351:secret:avre-sandbox-ghcr-credentials-7D6Khr"
 
   container_port = 8000
@@ -90,11 +88,8 @@ locals {
     {
       name  = "AVRE_LOG_LEVEL"
       value = "INFO"
-    },
-    {
-      name  = "AVRE_APP_VERSION"
-      value = "1.2.0"
     }
+    # AVRE_APP_VERSION is injected at deploy time by deploy.sh via -var app_version
   ]
 
   container_secrets = [

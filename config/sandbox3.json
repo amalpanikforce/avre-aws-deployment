@@ -1,9 +1,0 @@
-{
-  "aws_region": "ap-south-1",
-  "secret_name": "avre-sandbox-ghcr-credentials",
-  "ghcr_image": "ghcr.io/kcs-platform-engineering/avre",
-  "cluster_name": "avre-sandbox-ecs-cluster",
-  "service_name": "avre-sandbox-ecs",
-  "tg_dir": "live/nonprod/sandbox",
-  "version": "1.0.3"
-}

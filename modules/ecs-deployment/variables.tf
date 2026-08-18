@@ -92,3 +92,8 @@ variable "container_command" {
   type        = list(string)
   default     = ["sh", "-c", "alembic upgrade head && exec python -m uvicorn avre_api:app --host 0.0.0.0 --port 8000"]
 }
+
+variable "app_version" {
+  description = "Deployed application version (e.g. 1.0.3). Injected as AVRE_APP_VERSION env var into the container at deploy time."
+  type        = string
+}

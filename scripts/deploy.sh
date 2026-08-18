@@ -20,6 +20,10 @@ set -euo pipefail
 # Temporary corporate SSL workaround (can be set to false when corporate CA is trusted)
 readonly AWS_NO_VERIFY_SSL="${AWS_NO_VERIFY_SSL:-true}"
 
+# GHCR image repository — global constant for all client deployments
+# Override via env var: GHCR_IMAGE=ghcr.io/your-org/avre ./scripts/deploy.sh
+readonly GHCR_IMAGE="${GHCR_IMAGE:-ghcr.io/kcs-platform-engineering/avre}"
+
 # Globally suppress Python urllib3 SSL warnings for AWS CLI calls when SSL verification is disabled
 if [[ "$AWS_NO_VERIFY_SSL" == "true" ]]; then
     export PYTHONWARNINGS="ignore"
@@ -88,37 +92,29 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
     fail "Configuration file '$CONFIG_FILE' not found. All deployment inputs must be present in JSON file. Otherwise NO GO."
 fi
 
-# Parse inputs from JSON config
-CFG_AWS_REGION="$(get_json_field "aws_region" "$CONFIG_FILE")"
-CFG_SECRET_NAME="$(get_json_field "secret_name" "$CONFIG_FILE")"
-CFG_GHCR_IMAGE="$(get_json_field "ghcr_image" "$CONFIG_FILE")"
-CFG_CLUSTER_NAME="$(get_json_field "cluster_name" "$CONFIG_FILE")"
-CFG_SERVICE_NAME="$(get_json_field "service_name" "$CONFIG_FILE")"
-CFG_TG_DIR="$(get_json_field "tg_dir" "$CONFIG_FILE")"
+# Parse deploy-time inputs from config (version and region only)
+# ghcr_image is a global constant — not repeated per client
 CFG_VERSION="$(get_json_field "version" "$CONFIG_FILE")"
+CFG_AWS_REGION="$(get_json_field "aws_region" "$CONFIG_FILE")"
 
 # Strict Rule: ALL required parameters MUST be present in JSON config file!
 MISSING_FIELDS=()
+[[ -n "$CFG_VERSION" ]]    || MISSING_FIELDS+=("version")
 [[ -n "$CFG_AWS_REGION" ]] || MISSING_FIELDS+=("aws_region")
-[[ -n "$CFG_SECRET_NAME" ]] || MISSING_FIELDS+=("secret_name")
-[[ -n "$CFG_GHCR_IMAGE" ]] || MISSING_FIELDS+=("ghcr_image")
-[[ -n "$CFG_CLUSTER_NAME" ]] || MISSING_FIELDS+=("cluster_name")
-[[ -n "$CFG_SERVICE_NAME" ]] || MISSING_FIELDS+=("service_name")
-[[ -n "$CFG_TG_DIR" ]] || MISSING_FIELDS+=("tg_dir")
-[[ -n "$CFG_VERSION" ]] || MISSING_FIELDS+=("version")
 
 if [[ ${#MISSING_FIELDS[@]} -gt 0 ]]; then
     fail "Missing required input(s) in '$CONFIG_FILE': [${MISSING_FIELDS[*]}]. All inputs must be present in JSON file. Otherwise NO GO."
 fi
 
-# Set defaults from JSON config with optional CLI overrides
+# Set deploy-time variables from config with optional CLI overrides
 VERSION="${CLI_VERSION:-$CFG_VERSION}"
 readonly AWS_REGION="${AWS_REGION:-$CFG_AWS_REGION}"
-readonly SECRET_NAME="${SECRET_NAME:-$CFG_SECRET_NAME}"
-readonly GHCR_IMAGE="${GHCR_IMAGE:-$CFG_GHCR_IMAGE}"
-readonly CLUSTER_NAME="${CLUSTER_NAME:-$CFG_CLUSTER_NAME}"
-readonly SERVICE_NAME="${SERVICE_NAME:-$CFG_SERVICE_NAME}"
-readonly TG_DIR="${TG_DIR:-$REPO_ROOT/$CFG_TG_DIR}"
+
+# Derive infrastructure values by convention (single source of truth: env.hcl)
+# tg_dir      → always live/nonprod/<env> by repo structure
+# secret_name → always avre-<env>-ghcr-credentials by naming convention
+readonly TG_DIR="${TG_DIR:-$REPO_ROOT/live/nonprod/${ENV_NAME}}"
+readonly SECRET_NAME="${SECRET_NAME:-avre-${ENV_NAME}-ghcr-credentials}"
 
 if [[ ! "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
     fail "Invalid version format '$VERSION'. Expected semver format (e.g. 1.0.2 or v1.0.2)."
@@ -147,9 +143,8 @@ echo "Target Version : $VERSION"
 echo "Image Tag Ref  : ${GHCR_IMAGE}:${VERSION}"
 echo "AWS Region     : $AWS_REGION"
 echo "Secret Name    : $SECRET_NAME"
-echo "ECS Cluster    : $CLUSTER_NAME"
-echo "ECS Service    : $SERVICE_NAME"
 echo "Terragrunt Dir : $TG_DIR"
+echo "(ECS cluster and service resolved from Terragrunt outputs after apply)"
 echo
 
 # ============================================================
@@ -394,7 +389,8 @@ echo
 
 terragrunt plan \
     -var="container_image=${IMMUTABLE_IMAGE}" \
-    -var="repository_credentials_arn=${SECRET_ARN}"
+    -var="repository_credentials_arn=${SECRET_ARN}" \
+    -var="app_version=${VERSION}"
 
 # ============================================================
 # 11. Deployment Approval Prompt
@@ -424,7 +420,24 @@ echo
 terragrunt apply \
     -var="container_image=${IMMUTABLE_IMAGE}" \
     -var="repository_credentials_arn=${SECRET_ARN}" \
+    -var="app_version=${VERSION}" \
     -auto-approve
+
+# ============================================================
+# 12a. Read ECS Targets from Terragrunt Outputs
+#      Single source of truth: env.hcl — no duplication in config.json
+# ============================================================
+echo
+echo "Reading ECS deployment targets from Terragrunt outputs..."
+CLUSTER_NAME="$(terragrunt output -raw cluster_name 2>/dev/null)" \
+    || fail "Could not read 'cluster_name' from Terragrunt outputs."
+SERVICE_NAME="$(terragrunt output -raw service_name 2>/dev/null)" \
+    || fail "Could not read 'service_name' from Terragrunt outputs."
+readonly CLUSTER_NAME
+readonly SERVICE_NAME
+echo "ECS Cluster : $CLUSTER_NAME"
+echo "ECS Service : $SERVICE_NAME"
+echo
 
 # ============================================================
 # 13. Wait for ECS Service Stability (Idempotent Check)
