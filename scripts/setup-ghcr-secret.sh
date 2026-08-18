@@ -20,11 +20,6 @@ set -euo pipefail
 #   SECRET_NAME=avre-sandbox3-ghcr-credentials \
 #   GHCR_IMAGE=ghcr.io/kcs-platform-engineering/avre \
 #   ./scripts/setup-ghcr-secret.sh
-#
-# NOTE:
-#   --no-verify-ssl is enabled because the current environment
-#   uses corporate SSL interception.
-#   Remove it once the corporate CA is configured correctly.
 # ============================================================
 
 set -o pipefail
@@ -33,8 +28,12 @@ readonly AWS_REGION="${AWS_REGION:-ap-south-1}"
 readonly SECRET_NAME="${SECRET_NAME:-avre-sandbox3-ghcr-credentials}"
 readonly GHCR_IMAGE="${GHCR_IMAGE:-ghcr.io/kcs-platform-engineering/avre}"
 
-# Temporary corporate SSL workaround.
-readonly AWS_CLI_SSL_ARGS=(--no-verify-ssl)
+# Temporary corporate SSL workaround
+readonly AWS_NO_VERIFY_SSL="${AWS_NO_VERIFY_SSL:-true}"
+
+if [[ "$AWS_NO_VERIFY_SSL" == "true" ]]; then
+    export PYTHONWARNINGS="ignore"
+fi
 
 cleanup() {
     unset GHCR_TOKEN
@@ -43,6 +42,17 @@ cleanup() {
 }
 
 trap cleanup EXIT
+
+aws_cmd() {
+    local args=()
+    if [[ "$AWS_NO_VERIFY_SSL" == "true" ]]; then
+        args+=(--no-verify-ssl)
+    fi
+    if [[ -n "${AWS_PROFILE:-}" ]]; then
+        args+=(--profile "$AWS_PROFILE")
+    fi
+    aws "${args[@]}" "$@"
+}
 
 echo "=========================================="
 echo " AVRE GHCR Secret Setup"
@@ -72,33 +82,23 @@ echo
 
 echo "Checking AWS credentials..."
 
-if ! aws sts get-caller-identity \
-    --region "$AWS_REGION" \
-    "${AWS_CLI_SSL_ARGS[@]}" \
-    >/dev/null 2>&1; then
-
-    echo "ERROR: AWS credentials are not configured or cannot access AWS."
-    echo
-    echo "Test with:"
-    echo "  aws sts get-caller-identity --no-verify-ssl"
-    echo
-    exit 1
-fi
-
 AWS_ACCOUNT_ID="$(
-    aws sts get-caller-identity \
+    aws_cmd sts get-caller-identity \
         --query Account \
         --output text \
         --region "$AWS_REGION" \
-        "${AWS_CLI_SSL_ARGS[@]}"
-)"
+        2>/dev/null
+)" || {
+    echo "ERROR: AWS credentials are not configured or invalid."
+    exit 1
+}
 
 AWS_ARN="$(
-    aws sts get-caller-identity \
+    aws_cmd sts get-caller-identity \
         --query Arn \
         --output text \
         --region "$AWS_REGION" \
-        "${AWS_CLI_SSL_ARGS[@]}"
+        2>/dev/null
 )"
 
 echo "AWS Account: $AWS_ACCOUNT_ID"
@@ -160,11 +160,11 @@ echo
 echo "Checking GHCR image..."
 
 if ! docker manifest inspect \
-    "$GHCR_IMAGE:latest" \
+    "$GHCR_IMAGE:1.0.2" \
     >/dev/null 2>&1; then
 
     echo "ERROR: GHCR image does not exist or cannot be accessed:"
-    echo "  $GHCR_IMAGE:latest"
+    echo "  $GHCR_IMAGE:1.0.2"
     echo
     exit 1
 fi
@@ -179,7 +179,7 @@ echo
 echo "Reading GHCR image digest..."
 
 IMAGE_DIGEST="$(
-    docker buildx imagetools inspect "$GHCR_IMAGE:latest" |
+    docker buildx imagetools inspect "$GHCR_IMAGE:1.0.2" 2>/dev/null |
         awk '/^Digest:/ {print $2; exit}'
 )"
 
@@ -214,9 +214,6 @@ echo
 
 # ------------------------------------------------------------
 # 9. Create valid JSON
-#
-# GitHub PATs are expected to be ordinary token strings.
-# No jq dependency required.
 # ------------------------------------------------------------
 
 SECRET_JSON=$(printf \
@@ -224,12 +221,6 @@ SECRET_JSON=$(printf \
     "$GHCR_USERNAME" \
     "$GHCR_TOKEN"
 )
-
-# Basic sanity check.
-if [[ "$SECRET_JSON" != \{\"username\":\"*\",\"password\":\"*\"\} ]]; then
-    echo "ERROR: Failed to construct GHCR secret JSON."
-    exit 1
-fi
 
 # ------------------------------------------------------------
 # 10. Check whether secret exists
@@ -239,10 +230,9 @@ echo "Checking AWS Secrets Manager..."
 
 SECRET_EXISTS=false
 
-if aws secretsmanager describe-secret \
+if aws_cmd secretsmanager describe-secret \
     --secret-id "$SECRET_NAME" \
     --region "$AWS_REGION" \
-    "${AWS_CLI_SSL_ARGS[@]}" \
     >/dev/null 2>&1; then
 
     SECRET_EXISTS=true
@@ -256,11 +246,10 @@ if [[ "$SECRET_EXISTS" == "true" ]]; then
 
     echo "Updating existing secret..."
 
-    aws secretsmanager put-secret-value \
+    aws_cmd secretsmanager put-secret-value \
         --secret-id "$SECRET_NAME" \
         --secret-string "$SECRET_JSON" \
         --region "$AWS_REGION" \
-        "${AWS_CLI_SSL_ARGS[@]}" \
         >/dev/null
 
     echo "Secret updated."
@@ -269,12 +258,11 @@ else
 
     echo "Creating new secret..."
 
-    aws secretsmanager create-secret \
+    aws_cmd secretsmanager create-secret \
         --name "$SECRET_NAME" \
         --description "GHCR credentials for AVRE ECS deployment" \
         --secret-string "$SECRET_JSON" \
         --region "$AWS_REGION" \
-        "${AWS_CLI_SSL_ARGS[@]}" \
         >/dev/null
 
     echo "Secret created."
@@ -287,12 +275,12 @@ echo
 # ------------------------------------------------------------
 
 SECRET_ARN="$(
-    aws secretsmanager describe-secret \
+    aws_cmd secretsmanager describe-secret \
         --secret-id "$SECRET_NAME" \
         --query ARN \
         --output text \
         --region "$AWS_REGION" \
-        "${AWS_CLI_SSL_ARGS[@]}"
+        2>/dev/null
 )"
 
 echo "Secret ARN:"
@@ -306,16 +294,14 @@ echo
 echo "Validating stored secret..."
 
 STORED_SECRET="$(
-    aws secretsmanager get-secret-value \
+    aws_cmd secretsmanager get-secret-value \
         --secret-id "$SECRET_NAME" \
         --query SecretString \
         --output text \
         --region "$AWS_REGION" \
-        "${AWS_CLI_SSL_ARGS[@]}"
+        2>/dev/null
 )"
 
-# Check that the value starts/ends like expected JSON
-# and contains both required fields.
 if [[ "$STORED_SECRET" != \{\"username\":\"*\"\,\"password\":\"*\"\} ]]; then
     echo "ERROR: Stored secret is not valid GHCR JSON."
     echo
@@ -339,23 +325,8 @@ echo
 echo "Image:"
 echo "${GHCR_IMAGE}@${IMAGE_DIGEST}"
 echo
-echo "Use these deployment values:"
-echo
-echo "repository_credentials_arn = \"$SECRET_ARN\""
-echo "container_image            = \"${GHCR_IMAGE}@${IMAGE_DIGEST}\""
-echo
-echo "Then run:"
-echo
-echo "  terragrunt plan"
-echo "  terragrunt apply"
-echo
-
-# ------------------------------------------------------------
-# 15. Logout from GHCR
-# ------------------------------------------------------------
 
 docker logout ghcr.io >/dev/null 2>&1 || true
 
 echo "GHCR logout complete."
-echo
 echo "Done."

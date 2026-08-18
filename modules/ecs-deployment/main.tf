@@ -87,7 +87,7 @@ resource "aws_ecs_service" "this" {
   }
 
   tags = {
-    Name        = "${var.name_prefix}-${var.environment}-${var.service_name}"
-    ManagedBy   = "terragrunt"
+    Name      = "${var.name_prefix}-${var.environment}-${var.service_name}"
+    ManagedBy = "terragrunt"
   }
 }
