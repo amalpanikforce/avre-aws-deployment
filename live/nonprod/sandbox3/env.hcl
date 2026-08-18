@@ -12,7 +12,7 @@ locals {
     use_lockfile = true
   }
 
-  service_name = "ecs"
+  service_name = "app"
 
   cluster_name = "avre-sandbox3-ecs-cluster"
 

@@ -54,8 +54,11 @@ resource "aws_ecs_task_definition" "this" {
   tags = {
     Name        = "${var.name_prefix}-${var.environment}-${var.service_name}"
     Environment = var.environment
-    ManagedBy   = "terragrunt"
+    ManagedBy   = "Terragrunt"
     ClusterName = var.cluster_name
+    Product     = "AVRE"
+    DeployedBy  = "AVRE Team"
+    Owner       = "AVRE Cloud Team"
   }
 }
 
@@ -87,7 +90,12 @@ resource "aws_ecs_service" "this" {
   }
 
   tags = {
-    Name      = "${var.name_prefix}-${var.environment}-${var.service_name}"
-    ManagedBy = "terragrunt"
+    Name        = "${var.name_prefix}-${var.environment}-${var.service_name}"
+    Environment = var.environment
+    ManagedBy   = "Terragrunt"
+    ClusterName = var.cluster_name
+    Product     = "AVRE"
+    DeployedBy  = "AVRE Team"
+    Owner       = "AVRE Cloud Team"
   }
 }
