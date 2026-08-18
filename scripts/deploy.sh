@@ -342,9 +342,22 @@ echo
 # 7. Resolve Top-Level OCI Index Digest (Idempotent)
 # ============================================================
 echo "Resolving multi-platform OCI index digest for '$IMAGE_TAG_REF'..."
+
+MANIFEST_JSON="$(
+    docker buildx imagetools inspect \
+        "$IMAGE_TAG_REF" \
+        --format '{{json .Manifest}}' \
+        2>/dev/null
+)" || {
+    docker logout ghcr.io >/dev/null 2>&1 || true
+    fail "Could not inspect image manifest for '$IMAGE_TAG_REF'."
+}
+
 IMAGE_DIGEST="$(
-    docker buildx imagetools inspect "$IMAGE_TAG_REF" 2>/dev/null |
-        awk '/^Digest:/ {print $2; exit}' | tr -d '\r'
+    printf '%s' "$MANIFEST_JSON" |
+        grep -oE '"digest"[[:space:]]*:[[:space:]]*"sha256:[a-f0-9]{64}"' |
+        head -n 1 |
+        sed -E 's/.*"(sha256:[a-f0-9]{64})".*/\1/'
 )"
 
 if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
@@ -353,6 +366,7 @@ if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]; then
 fi
 
 echo "Resolved Digest : $IMAGE_DIGEST"
+
 IMMUTABLE_IMAGE="${GHCR_IMAGE}@${IMAGE_DIGEST}"
 echo "Immutable Image : $IMMUTABLE_IMAGE"
 echo
