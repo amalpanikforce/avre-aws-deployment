@@ -57,7 +57,8 @@ destroy: check-stack ## Destroy deployment (requires CONFIRM=yes)
 ifneq ($(CONFIRM),yes)
 	$(error Destroy safety check failed. Run 'make destroy STACK=$(STACK) CONFIRM=yes')
 endif
-	cd $(STACK_DIR) && $(TG) destroy $(APPROVE_FLAG)
+	chmod +x ./scripts/destroy.sh
+	CI=true ./scripts/destroy.sh $(STACK)
 
 .PHONY: check-stack
 check-stack:
