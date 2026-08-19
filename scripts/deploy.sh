@@ -108,7 +108,7 @@ fi
 
 # Set deploy-time variables from config with optional CLI overrides
 VERSION="${CLI_VERSION:-$CFG_VERSION}"
-readonly AWS_REGION="${AWS_REGION:-$CFG_AWS_REGION}"
+readonly AWS_REGION="$CFG_AWS_REGION"
 
 # Derive infrastructure values by convention (single source of truth: env.hcl)
 # tg_dir      → always live/nonprod/<env> by repo structure

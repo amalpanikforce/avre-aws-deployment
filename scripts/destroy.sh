@@ -63,7 +63,7 @@ if [[ -z "$CFG_AWS_REGION" ]]; then
     fail "Missing required 'aws_region' in '$CONFIG_FILE'."
 fi
 
-readonly AWS_REGION="${AWS_REGION:-$CFG_AWS_REGION}"
+readonly AWS_REGION="$CFG_AWS_REGION"
 
 # Derive infrastructure values by convention
 readonly TG_DIR="${TG_DIR:-$REPO_ROOT/live/nonprod/${ENV_NAME}}"
