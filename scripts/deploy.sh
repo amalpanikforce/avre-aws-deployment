@@ -201,6 +201,9 @@ if [[ "$SECRET_EXISTS" == "true" ]]; then
     echo
 else
     echo "GHCR secret '$SECRET_NAME' does not exist."
+    if [[ "${CI:-false}" == "true" ]]; then
+        fail "GHCR credentials secret '$SECRET_NAME' does not exist in AWS Secrets Manager. You must run deploy.sh locally once first to perform initial interactive setup."
+    fi
     echo "Initial setup required for GHCR authentication."
     echo
 
@@ -286,6 +289,9 @@ fi
 
 if [[ "$LOGIN_VALID" == "false" ]]; then
     echo "WARNING: Stored GHCR credentials in AWS Secrets Manager are invalid or expired."
+    if [[ "${CI:-false}" == "true" ]]; then
+        fail "Stored GHCR credentials in AWS Secrets Manager are invalid or expired. You must run deploy.sh locally once to refresh them interactively."
+    fi
     echo "Please provide updated credentials to refresh AWS Secrets Manager."
     echo
 
